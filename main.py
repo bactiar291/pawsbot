@@ -18,6 +18,12 @@ def display_banner():
     banner_text = figlet_format("BACTIAR 291", font="slant")
     print(Fore.CYAN + banner_text)
 
+def loading_animation():
+    for i in range(3):
+        print(Fore.CYAN + "Loading" + "." * (i + 1), end="\r")
+        time.sleep(1)
+    print(" " * 10, end="\r")
+
 def get_random_color():
     colors = [Fore.RED, Fore.GREEN, Fore.YELLOW, Fore.CYAN, Fore.MAGENTA]
     return random.choice(colors)
@@ -36,6 +42,17 @@ session.headers.update({
     'Sec-Fetch-Site': 'same-site',
     'Content-Type': 'application/json'
 })
+
+def animate_text(text):
+    for i in range(3):
+        print(Fore.CYAN + text + "." * (i + 1), end="\r")
+        time.sleep(0.5)
+    print(Fore.CYAN + text + "    ")
+
+def display_processing_account(account_number):
+    account_text = figlet_format(f"Memproses Akun #{account_number}", font="slant")
+    print(get_random_color() + account_text)
+    animate_text("Loading Akun")
 
 def ambilData(data_inisial):
     url = "https://api.paws.community/v1/user/auth"
@@ -102,46 +119,62 @@ def klaimTugas(token, id_tugas, hadiah):
     except requests.exceptions.RequestException as e:
         print(f"{Fore.RED}Error klaim tugas: {e}")
 
+def countdown(seconds):
+    for remaining in range(seconds, 0, -1):
+        print(Fore.YELLOW + f"\rJeda: {remaining} detik...", end="")
+        time.sleep(1)
+    print("\rJeda selesai. Melanjutkan...     ")
+
 def main():
     clear_terminal()
     display_banner()
+    loading_animation()
+    clear_terminal()
+    display_banner()
     
-    print("Pembersihan Tugas PAWS")
-    file_kueri = "query.txt"
-    flag_tugas = input("Apakah Anda ingin mengklaim tugas? (y/n): ") or 'y'
-    jeda_bot = input("Masukkan jeda bot dalam detik antara akun: ") or '1'
-    jeda_bot = int(jeda_bot)
+    flag_tugas = 'y'
+    jeda_bot = 5
 
-    jumlah_akun = 0
-    saldo_total = 0
-    daftar_tugas = []
-    with open(file_kueri, 'r') as file:
-        for baris in file:
-            data_inisial = baris.strip()
-            
-            clear_terminal()
-            print(get_random_color() + f"Memproses Akun #{jumlah_akun + 1}\n")
-
-            hasil = ambilData(data_inisial)
-            if hasil:
-                token = hasil["data"][0]
-                data_pengguna = hasil.get("data", [None, {}])[1]
-                nama_pengguna = data_pengguna.get("userData", {}).get("username", "Tidak Ada Nama Pengguna")
-                saldo = data_pengguna.get("gameData", {}).get("balance", 0)
-                print(get_random_color() + f"Nama Pengguna: {nama_pengguna}")
-                saldo_total += saldo
-                
-                if flag_tugas.lower() == 'y':
-                    ambilTugas(token, daftar_tugas)
-                jumlah_akun += 1
-            
-            time.sleep(jeda_bot)
+    while True:
+        clear_terminal()
+        display_banner()
         
-        saldo_total_formatted = f"{saldo_total:,}".replace(",", ".")
-        print(get_random_color() + "\nSALDO TOTAL:", saldo_total_formatted)
+        print("Pembersihan Tugas PAWS")
+        file_kueri = "query.txt"
 
-    headers = ["Judul Tugas", "Hadiah", "Status"]
-    print("\n" + get_random_color() + tabulate(daftar_tugas, headers, tablefmt="fancy_grid", stralign="center", numalign="center"))
+        jumlah_akun = 0
+        saldo_total = 0
+        daftar_tugas = []
+        with open(file_kueri, 'r') as file:
+            for baris in file:
+                data_inisial = baris.strip()
+                
+                clear_terminal()
+                display_processing_account(jumlah_akun + 1)
+
+                hasil = ambilData(data_inisial)
+                if hasil:
+                    token = hasil["data"][0]
+                    data_pengguna = hasil.get("data", [None, {}])[1]
+                    nama_pengguna = data_pengguna.get("userData", {}).get("username", "Tidak Ada Nama Pengguna")
+                    saldo = data_pengguna.get("gameData", {}).get("balance", 0)
+                    print(get_random_color() + f"Nama Pengguna: {nama_pengguna}")
+                    saldo_total += saldo
+                    
+                    if flag_tugas.lower() == 'y':
+                        ambilTugas(token, daftar_tugas)
+                    jumlah_akun += 1
+                
+                countdown(jeda_bot)
+            
+            saldo_total_formatted = f"{saldo_total:,}".replace(",", ".")
+            print(get_random_color() + "\nSALDO TOTAL:", saldo_total_formatted)
+
+        headers = ["Judul Tugas", "Hadiah", "Status"]
+        print("\n" + get_random_color() + tabulate(daftar_tugas, headers, tablefmt="fancy_grid", stralign="center", numalign="center"))
+
+        print(Fore.YELLOW + "\nMenunggu 30 detik sebelum pengulangan...")
+        countdown(30)
 
 if __name__ == "__main__": 
     main()
